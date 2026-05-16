@@ -1,5 +1,25 @@
 from flask import Flask,render_template,request
 from ultralytics import YOLO
+import firebase_admin
+from firebase_admin import credentials,firestore,storage
+import os
+import json
+
+service_account_path = os.path.join(
+    os.path.dirname(__file__),
+    "soccer-app-2d09b-firebase-adminsdk-fbsvc-0ffbf37e55.json",
+)
+
+with open(service_account_path) as f:
+    project_id = json.load(f)["project_id"]
+
+cred = credentials.Certificate(service_account_path)
+firebase_admin.initialize_app(cred, {
+    "storageBucket": f"{project_id}.firebasestorage.app",
+})
+db = firestore.client()
+bucket = storage.bucket()
+
 app=Flask(__name__)
 @app.route('/') 
 def home(): 
@@ -16,6 +36,16 @@ def upload():
 def analyze(image):
     model=YOLO("models/yolov8n.pt")
     results=model.predict(image,save=True)
+    upload_image=bucket.blob("runs/detect/predict/image.jpg")
+    upload_image.upload_from_filename("runs/detect/predict/image.jpg")
+    upload_image.make_public()
+    doc_ref=db.collection("videos").document()
+    doc_ref.set(
+        {
+            "name": "test",
+            "url":upload_image.public_url
+        }
+    )
 
 
 if __name__ == "__main__":
