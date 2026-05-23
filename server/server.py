@@ -29,11 +29,13 @@ def home():
 def upload():
     if request.method == "POST":#upload video
         file=request.files["file"]
+        uid=request.form.get("user_id")
+        name=request.form.get("name")
         file.save("image.jpeg")
-        analyze("image.jpeg")
+        analyze("image.jpeg",uid,name)
     return render_template("index.html")
 
-def analyze(image):
+def analyze(image,uid,name):
     model=YOLO("models/yolov8n.pt")
     results=model.predict(image,save=True)
     upload_image=bucket.blob("runs/detect/predict/image.jpg")
@@ -42,8 +44,10 @@ def analyze(image):
     doc_ref=db.collection("videos").document()
     doc_ref.set(
         {
-            "name": "test",
-            "url":upload_image.public_url
+            "name": name,
+            "url":upload_image.public_url,
+            "uid":uid,
+            "dateCreated":firestore.SERVER_TIMESTAMP
         }
     )
 
