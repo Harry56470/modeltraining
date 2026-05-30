@@ -38,7 +38,7 @@ def upload():
 def analyze(image,uid,name):
     model=YOLO("models/yolov8n.pt")
     results=model.predict(image,save=True)
-    upload_image=bucket.blob("runs/detect/predict/image.jpg")
+    upload_image=bucket.blob(f"{uid}/{name}.jpg")
     upload_image.upload_from_filename("runs/detect/predict/image.jpg")
     upload_image.make_public()
     doc_ref=db.collection("videos").document()
